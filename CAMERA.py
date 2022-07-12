@@ -1,6 +1,6 @@
 import cv2
 import os
-
+import re
 import config
 import pytesseract
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
@@ -32,12 +32,13 @@ def read_camera():
 def getTarga(iniziale):
     # Read the image file
     image = cv2.imread(iniziale)
+    image = image[202:777, 300:1170]
+
     # Convert to Grayscale Image
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Canny Edge Detection
     canny_edge = cv2.Canny(gray_image, 170, 200)
-
     # Find contours based on Edges
     contours, new = cv2.findContours(canny_edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)[:30]
@@ -54,11 +55,13 @@ def getTarga(iniziale):
     for contour in contours:
         # Find Perimeter of contour and it should be a closed contour
         perimeter = cv2.arcLength(contour, True)
+        print(perimeter)
         approx = cv2.approxPolyDP(contour, 0.01 * perimeter, True)
+        print(approx)
         if len(approx) == 4:  # see whether it is a Rect
             contour_with_license_plate = approx
             x, y, w, h = cv2.boundingRect(contour)
-            crop = int((w*8)/100)
+            crop = int((w*3)/100)
             x_sx=x+crop
             x_dx =x-crop
             license_plate = gray_image[y:y + h, x_sx:x_dx + w]
@@ -69,12 +72,14 @@ def getTarga(iniziale):
     (thresh, license_plate) = cv2.threshold(license_plate, 150, 180, cv2.THRESH_BINARY)
 
     # Text Recognition
-    text = pytesseract.image_to_string(license_plate,config='--psm 11', lang='ita')
+    text = pytesseract.image_to_string(license_plate,config='--psm 8', lang='ita')
+
+    text = re.sub(r'[^A-Za-z0-9-_]+', '', text)
+
     # Draw License Plate and write the Text
     image = cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 3)
     image = cv2.putText(image, text, (x - 100, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 6, cv2.LINE_AA)
 
     print("License Plate :", text)
-
     cv2.imshow("License Plate Detection", license_plate)
     cv2.waitKey(0)
