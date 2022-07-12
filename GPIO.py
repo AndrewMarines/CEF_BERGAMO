@@ -1,6 +1,7 @@
 import time
 import serial
 import CAMERA
+from RPi import GPIO
 
 ser = serial.Serial(
     port='/dev/ttyUSB0',
@@ -10,6 +11,22 @@ ser = serial.Serial(
     bytesize=serial.EIGHTBITS,
     timeout=0
 )
+configuration = config.read()
+S1_ROSSO = configuration.get("GPIO", "S1_ROSSO")
+S1_VERDE = configuration.get("GPIO", "S1_VERDE")
+S2_ROSSO = configuration.get("GPIO", "S2_ROSSO")
+S2_VERDE = configuration.get("GPIO", "S2_VERDE")
+P_MANUALE = configuration.get("GPIO", "P_MANUALE")
+
+
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(S1_ROSSO, GPIO.OUT)
+GPIO.setup(S1_VERDE, GPIO.OUT)
+GPIO.setup(S2_ROSSO, GPIO.OUT)
+GPIO.setup(S2_VERDE, GPIO.OUT)
+GPIO.setup(P_MANUALE, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#GPIO.output(21, GPIO.HIGH)
+#GPIO.input(20)
 
 
 def getPeso():

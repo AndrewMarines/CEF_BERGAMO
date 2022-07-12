@@ -17,6 +17,13 @@ def write():
     config_file.set("DB", "PASSWORD", "password")
     config_file.set("DB", "DB", "db")
 
+    config_file.add_section("GPIO")
+    config_file.set("GPIO", "S1_ROSSO", "20")
+    config_file.set("GPIO", "S1_VERDE", "21")
+    config_file.set("GPIO", "S2_ROSSO", "22")
+    config_file.set("GPIO", "S2_VERDE", "23")
+    config_file.set("GPIO", "P_MANUALE", "24")
+
     # SAVE CONFIG FILE
     with open(r"configurations.ini", 'w') as configfileObj:
         config_file.write(configfileObj)
