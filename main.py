@@ -1,3 +1,4 @@
+import DB
 import config
 import CAMERA
 import GPIO
@@ -8,9 +9,10 @@ def program():
     if not os.path.exists("configurations.ini"):
         print("USING DEFAULT VALUES. PLEASE CHECK THEM.")
         config.write()
-
-    while True:
-        GPIO.controlloPeso()
+    #CAMERA.read_camera()
+    #while True:
+     #   GPIO.controlloPeso()
+    DB.prova()
 
 """
     for f in glob.iglob("C:\\Users\\andre\\Desktop\\TARGHE/*.png"):

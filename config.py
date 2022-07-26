@@ -15,13 +15,11 @@ def write():
     config_file.set("DB", "HOST", "localhost")
     config_file.set("DB", "USER", "user")
     config_file.set("DB", "PASSWORD", "password")
-    config_file.set("DB", "DB", "db")
+    config_file.set("DB", "DB", "cef_bergamo")
 
     config_file.add_section("GPIO")
-    config_file.set("GPIO", "S1_ROSSO", "20")
-    config_file.set("GPIO", "S1_VERDE", "21")
-    config_file.set("GPIO", "S2_ROSSO", "22")
-    config_file.set("GPIO", "S2_VERDE", "23")
+    config_file.set("GPIO", "S_ROSSO", "20")
+    config_file.set("GPIO", "S_VERDE", "21")
     config_file.set("GPIO", "P_MANUALE", "24")
 
     # SAVE CONFIG FILE

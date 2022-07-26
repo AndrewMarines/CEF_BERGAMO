@@ -3,7 +3,9 @@ import os
 import re
 import config
 import pytesseract
+
 pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
 
 def read_camera():
     configuration = config.read()
@@ -61,9 +63,9 @@ def getTarga(iniziale):
         if len(approx) == 4:  # see whether it is a Rect
             contour_with_license_plate = approx
             x, y, w, h = cv2.boundingRect(contour)
-            crop = int((w*3)/100)
-            x_sx=x+crop
-            x_dx =x-crop
+            crop = int((w * 3) / 100)
+            x_sx = x + crop
+            x_dx = x - crop
             license_plate = gray_image[y:y + h, x_sx:x_dx + w]
             break
 
@@ -72,7 +74,7 @@ def getTarga(iniziale):
     (thresh, license_plate) = cv2.threshold(license_plate, 150, 180, cv2.THRESH_BINARY)
 
     # Text Recognition
-    text = pytesseract.image_to_string(license_plate,config='--psm 8', lang='ita')
+    text = pytesseract.image_to_string(license_plate, config='--psm 8', lang='ita')
 
     text = re.sub(r'[^A-Za-z0-9-_]+', '', text)
 
