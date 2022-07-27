@@ -1,21 +1,25 @@
 import pymysql.cursors
 import pymysql
 import config
+try:
+    configuration = config.read()
+    host = configuration.get("DB", "HOST")
+    user = configuration.get("DB", "USER")
+    password = configuration.get("DB", "PASSWORD")
+    db = configuration.get("DB", "DB")
 
-configuration = config.read()
-host = configuration.get("DB", "HOST")
-user = configuration.get("DB", "USER")
-password = configuration.get("DB", "PASSWORD")
-db = configuration.get("DB", "DB")
 
 
-# Connect to the database
-connection = pymysql.connect(host=host,
-                             user=user,
-                             password=password,
-                             db=db,
-                             charset='utf8mb4',
-                             cursorclass=pymysql.cursors.DictCursor)
+    # Connect to the database
+    connection = pymysql.connect(host=host,
+                                 user=user,
+                                 password=password,
+                                 db=db,
+                                 charset='utf8mb4',
+                                 cursorclass=pymysql.cursors.DictCursor)
+
+except:
+    pass
 
 def convertToBinaryData(filename):
     # Convert digital data to binary format

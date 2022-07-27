@@ -1,6 +1,9 @@
 import cv2
 import os
 import re
+
+import numpy as np
+
 import config
 import pytesseract
 
@@ -36,13 +39,32 @@ def getTarga(iniziale):
     image = cv2.imread(iniziale)
     image = image[202:777, 300:1170]
 
+
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+    # define range wanted color in HSV
+    upper_val = np.array([220, 200, 120])
+    lower_val = np.array([120, 10, 35])
+    mask = cv2.inRange(image, lower_val, upper_val)
+    croped = cv2.bitwise_and(image, image, mask=mask)
+
+
+
+    scale_percent = 120  # percent of original size
+    width = int(image.shape[1] * scale_percent / 100)
+    height = int(image.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    image = cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+
+
     # Convert to Grayscale Image
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
 
     # Canny Edge Detection
     canny_edge = cv2.Canny(gray_image, 170, 200)
     # Find contours based on Edges
-    contours, new = cv2.findContours(canny_edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, new = cv2.findContours(canny_edge.copy(), cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)[:30]
 
     # Initialize license Plate contour and x,y coordinates
@@ -57,10 +79,8 @@ def getTarga(iniziale):
     for contour in contours:
         # Find Perimeter of contour and it should be a closed contour
         perimeter = cv2.arcLength(contour, True)
-        print(perimeter)
         approx = cv2.approxPolyDP(contour, 0.01 * perimeter, True)
-        print(approx)
-        if len(approx) == 4:  # see whether it is a Rect
+        if len(approx) == 4 and perimeter>300:  # see whether it is a Rect
             contour_with_license_plate = approx
             x, y, w, h = cv2.boundingRect(contour)
             crop = int((w * 3) / 100)
@@ -73,6 +93,23 @@ def getTarga(iniziale):
     license_plate = cv2.bilateralFilter(license_plate, 11, 17, 17)
     (thresh, license_plate) = cv2.threshold(license_plate, 150, 180, cv2.THRESH_BINARY)
 
+    # remove noise / close gaps
+    kernel = np.ones((3, 3), np.uint8)
+    result = cv2.morphologyEx(license_plate, cv2.MORPH_CLOSE, kernel)
+
+    # dilate result to make characters more solid
+    kernel2 = np.ones((2, 2), np.uint8)
+    license_plate = cv2.dilate(result, kernel2, iterations=1)
+
+
+
+
+    scale_percent = 150  # percent of original size
+    width = int(license_plate.shape[1] * scale_percent / 100)
+    height = int(license_plate.shape[0] * scale_percent / 100)
+    dim = (width, height)
+    license_plate = cv2.resize(license_plate, dim, interpolation=cv2.INTER_AREA)
+
     # Text Recognition
     text = pytesseract.image_to_string(license_plate, config='--psm 8', lang='ita')
 
@@ -82,6 +119,10 @@ def getTarga(iniziale):
     image = cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 3)
     image = cv2.putText(image, text, (x - 100, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 6, cv2.LINE_AA)
 
-    print("License Plate :", text)
+    cv2.imshow("License Plate Detection", image)
+    cv2.waitKey(0)
+
     cv2.imshow("License Plate Detection", license_plate)
     cv2.waitKey(0)
+
+    print("License Plate :", text)
