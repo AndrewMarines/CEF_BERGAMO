@@ -29,8 +29,6 @@ def read_camera():
 
     _, frame = cap.read()
     cap.release()
-    cv2.imshow("CAMERA", frame)
-    cv2.waitKey(0)
     return frame
 
 

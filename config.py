@@ -13,14 +13,19 @@ def write():
 
     config_file.add_section("DB")
     config_file.set("DB", "HOST", "localhost")
-    config_file.set("DB", "USER", "user")
-    config_file.set("DB", "PASSWORD", "password")
+    config_file.set("DB", "USER", "root")
+    config_file.set("DB", "PASSWORD", "SestanteA")
     config_file.set("DB", "DB", "cef_bergamo")
 
     config_file.add_section("GPIO")
-    config_file.set("GPIO", "S_ROSSO", "20")
-    config_file.set("GPIO", "S_VERDE", "21")
-    config_file.set("GPIO", "P_MANUALE", "24")
+    config_file.set("GPIO", "S_ROSSO", "7")
+    config_file.set("GPIO", "S_VERDE", "13")
+    config_file.set("GPIO", "CICALINO", "15")
+    config_file.set("GPIO", "P_MANUALE", "22")
+    config_file.set("GPIO", "P_AUTOMATICO", "37")
+    config_file.set("GPIO", "PRESENZA_MEZZO", "29")
+    config_file.set("GPIO", "CHIAMATA", "31")
+    config_file.set("GPIO", "PROCEDURA_OK", "16")
 
     # SAVE CONFIG FILE
     with open(r"configurations.ini", 'w') as configfileObj:

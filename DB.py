@@ -24,14 +24,7 @@ try:
 except:
     pass
 
-def convertToBinaryData(filename):
-    # Convert digital data to binary format
-    with open(filename, 'rb') as file:
-        binaryData = file.read()
-    return binaryData
-
-
-def insert(targa):
+def insert(targa, pesata):
     probabile_targa = CAMERA.getTarga(targa)
     try:
 
@@ -53,7 +46,7 @@ def insert(targa):
             id = int(id_targa['id'])
             # Create a new record
             sql = "INSERT INTO `pesate` (`pesata`, `path_immagine`, `id_targa`) VALUES (%s, %s, %s)"
-            cursor.execute(sql, (150,targa , id))
+            cursor.execute(sql, (pesata,targa , id))
 
         # connection is not autocommit by default. So you must commit to save
         # your changes.
