@@ -80,7 +80,7 @@ def getTarga(iniziale):
         # Find Perimeter of contour and it should be a closed contour
         perimeter = cv2.arcLength(contour, True)
         approx = cv2.approxPolyDP(contour, 0.01 * perimeter, True)
-        if len(approx) == 4 and perimeter>300:  # see whether it is a Rect
+        if len(approx) == 4 and perimeter>100:  # see whether it is a Rect
             contour_with_license_plate = approx
             x, y, w, h = cv2.boundingRect(contour)
             crop = int((w * 3) / 100)
@@ -119,10 +119,8 @@ def getTarga(iniziale):
     image = cv2.rectangle(image, (x, y), (x + w, y + h), (0, 0, 255), 3)
     image = cv2.putText(image, text, (x - 100, y - 50), cv2.FONT_HERSHEY_SIMPLEX, 3, (0, 255, 0), 6, cv2.LINE_AA)
 
-    cv2.imshow("License Plate Detection", image)
-    cv2.waitKey(0)
-
-    cv2.imshow("License Plate Detection", license_plate)
+    cv2.imshow("targa", image)
     cv2.waitKey(0)
 
     print("License Plate :", text)
+    return text

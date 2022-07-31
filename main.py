@@ -12,10 +12,10 @@ def program():
     #CAMERA.read_camera()
     #while True:
      #   GPIO.controlloPeso()
-    #CAMERA.getTarga("C:\\Users\\andre\\Desktop\\TARGHE\\GA919BK.png")
+    DB.insert("TARGHE\DE241XT.png")
 
-    for f in glob.iglob("C:\\Users\\andre\\Desktop\\TARGHE/*.png"):
-        CAMERA.getTarga(f)
+    #for f in glob.iglob("C:\\Users\\andre\\Desktop\\TARGHE/*.png"):
+     #   CAMERA.getTarga(f)
 
 
 if __name__ == '__main__':
