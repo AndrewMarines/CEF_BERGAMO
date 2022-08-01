@@ -26,6 +26,10 @@ except:
 
 def insert(targa, pesata):
     probabile_targa = CAMERA.getTarga(targa)
+    if len(probabile_targa)>7:
+        probabile_targa = "???????"
+
+    targa = targa.replace("/var/www/html","")
     try:
 
         with connection.cursor() as cursor:

@@ -8,14 +8,14 @@ import multiprocessing
 import DB
 import config
 
-#ser = serial.Serial(
- #   port='/dev/ttyUSB0',
-  #  baudrate=9600,
-   # parity=serial.PARITY_NONE,
-    #stopbits=serial.STOPBITS_ONE,
-    #bytesize=serial.EIGHTBITS,
-    #timeout=0
-#)
+ser = serial.Serial(
+    port='/dev/ttyUSB0',
+    baudrate=9600,
+    parity=serial.PARITY_NONE,
+    stopbits=serial.STOPBITS_ONE,
+    bytesize=serial.EIGHTBITS,
+    timeout=1
+)
 
 configuration = config.read()
 S_ROSSO = int(configuration.get("GPIO", "S_ROSSO"))
@@ -40,9 +40,9 @@ GPIO.setup(PRESENZA_MEZZO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
 def getPeso():
-    #x = ser.readline()
-    #x = int(x.replace("$", ""))
-    x=0
+    ser.flushInput()
+    x = ser.read_until(b'\r').decode()
+    x = int(x.replace("$", ""))
     return x
 
 
@@ -118,9 +118,9 @@ def programma_automatico():
             semaforo_verde(False)
             x = 0
             peso = getPeso()
-            if peso > 0 or not GPIO.input(PRESENZA_MEZZO):
+            if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
                 time.sleep(0.1)
-                if peso > 0 or not GPIO.input(PRESENZA_MEZZO):
+                if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
                     stato =1
         #Controllo se camion sta 5 secondi sopra
         elif stato == 1:
@@ -139,25 +139,27 @@ def programma_automatico():
         #Fotografo
         elif stato == 2:
             def db():
-                DB.insert("/var/www/html/TARGHE/" + now, peso_updated)
+                DB.insert("/var/www/html/" + now+".png", peso_updated)
             foto = CAMERA.read_camera()
             semaforo_rosso(False)
             semaforo_verde(True)
             now = str(datetime.now())
             now = now.replace(":","-")
-            cv2.imwrite("/var/www/html/TARGHE/"+ now +".png",foto)
+            cv2.imwrite("/var/www/html/"+ now +".png",foto)
             multiprocessing.Process(target=db).start()
             stato = 3
 
         elif stato == 3:
-            if GPIO.input(PRESENZA_MEZZO):
+            peso = getPeso()
+            if peso<900:
                 time.sleep(0.1)
-                if GPIO.input(PRESENZA_MEZZO):
+                if peso<900:
                     time.sleep(0.5)
                     stato = 0
 
         time.sleep(1)
-        print(stato)
+        print("Stato: " + str(stato))
+        print("Peso: " + str(peso))
 
 
 
