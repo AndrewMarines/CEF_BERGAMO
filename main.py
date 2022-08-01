@@ -11,13 +11,7 @@ def program():
         print("USING DEFAULT VALUES. PLEASE CHECK THEM.")
         config.write()
 
-
-    #while True:
-     #   GPIO.controlloPeso()
-    #DB.insert("TARGHE\DE241XT.png")
-    #CAMERA.getTarga("TARGHE\DE241XT.png")
-    #for f in glob.iglob("C:\\Users\\andre\\Desktop\\TARGHE/*.png"):
-     #   CAMERA.getTarga(f)
+    GPIO.programma()
 
 
 if __name__ == '__main__':
