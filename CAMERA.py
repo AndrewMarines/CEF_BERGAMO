@@ -18,10 +18,8 @@ def read_camera():
     PASSWORD = configuration.get("CAMERA", "PASSWORD")
 
     HTTP_URL = f'http://admin:hik123456@192.168.10.65/ISAPI/Streaming/channels/301/picture?videoResolutionWidth=1920&videoResolutionHeight=1080'
-    from requests.auth import HTTPBasicAuth
-    import requests
     cam = Client('http://192.168.10.65', 'admin', 'hik123456')
-    vid = cam.Streaming.channels[301].picture(method='get', type='opaque_data')
+    vid = cam.Streaming.channels[301].picture(method='get', type='opaque_data', params={'videoResolutionWidth':'1920', 'videoResolutionHeight':'1080'})
     bytes = b''
     for chunk in vid.iter_content(chunk_size=1024):
 
@@ -32,8 +30,7 @@ def read_camera():
                 jpg = bytes[a:b + 2]
                 bytes = bytes[b + 2:]
                 i = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
-                cv2.imshow("I", i)
-                cv2.waitKey(0)
+
                 return i
 
 def getTarga(iniziale):

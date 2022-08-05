@@ -13,6 +13,12 @@ try:
 
 
 
+
+except:
+    pass
+
+def insert(targa, pesata):
+
     # Connect to the database
     connection = pymysql.connect(host=host,
                                  user=user,
@@ -20,11 +26,6 @@ try:
                                  db=db,
                                  charset='utf8mb4',
                                  cursorclass=pymysql.cursors.DictCursor)
-
-except:
-    pass
-
-def insert(targa, pesata):
     probabile_targa = CAMERA.getTarga(targa)
     if len(probabile_targa)>7:
         probabile_targa = "???????"

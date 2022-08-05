@@ -1,13 +1,12 @@
 import time
 import cv2
-import serial
 import CAMERA
 from RPi import GPIO
 from datetime import datetime
 import multiprocessing
 import DB
 import config
-
+import serial
 ser = serial.Serial(
     port='/dev/ttyUSB0',
     baudrate=9600,
@@ -50,6 +49,7 @@ def getPeso():
 def programma():
     semaforo_rosso(False)
     semaforo_verde(False)
+    GPIO.output(CICALINO,True)
     while True:
         if not GPIO.input(P_MANUALE):
             time.sleep(0.1)
@@ -125,16 +125,16 @@ def programma_automatico():
         #Controllo se camion sta 5 secondi sopra
         elif stato == 1:
             peso_updated = getPeso()
-            r = range(peso - 50, peso + 50)
+            r = range(peso - 120, peso + 120)
             if peso_updated in r:
                 x += 1
             else: stato = 0
 
             if x == 2:
                 semaforo_rosso(True)
-            if x>5 or not GPIO.input(PRESENZA_MEZZO):
+            if x>3 or not GPIO.input(PRESENZA_MEZZO):
                 time.sleep(0.1)
-                if x > 5 or not GPIO.input(PRESENZA_MEZZO):
+                if x > 3 or not GPIO.input(PRESENZA_MEZZO):
                     stato = 2
         #Fotografo
         elif stato == 2:
