@@ -11,9 +11,6 @@ try:
     password = configuration.get("DB", "PASSWORD")
     db = configuration.get("DB", "DB")
 
-
-
-
 except:
     pass
 

@@ -36,13 +36,25 @@ GPIO.setup(P_CHIAMATA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(PROCEDURA_OK, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(PRESENZA_MEZZO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 #GPIO.input(20)
+global errore
+errore = 0
 
 
 def getPeso():
-    ser.flushInput()
-    x = ser.read_until(b'\r').decode()
-    x = int(x.replace("$", ""))
-    return x
+    global errore
+    try:
+        ser.flushInput()
+        x = ser.read_until(b'\r').decode()
+        x = int(x.replace("$", ""))
+        return x
+    except:
+        if errore < 3:
+            print("ERRORE NELLA LETTURA DALLA PESA, RIPROVO.")
+            errore+=1
+            getPeso()
+        else:
+            print("TENTATIVI NON A SUCCESSO. MANDO 0 COME PESO")
+            return 0
 
 
 
@@ -118,10 +130,15 @@ def programma_automatico():
             semaforo_verde(False)
             x = 0
             peso = getPeso()
-            if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
-                time.sleep(0.1)
+            try:
                 if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
-                    stato =1
+                    time.sleep(0.1)
+                    if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
+                        stato =1
+            except TypeError:
+                print(peso)
+                print(type(peso))
+
         #Controllo se camion sta 5 secondi sopra
         elif stato == 1:
             peso_updated = getPeso()
