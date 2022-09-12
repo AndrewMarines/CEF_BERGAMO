@@ -6,6 +6,7 @@ from datetime import datetime
 import multiprocessing
 import DB
 import config
+import threading
 import serial
 ser = serial.Serial(
     port='/dev/ttyUSB0',
@@ -15,6 +16,18 @@ ser = serial.Serial(
     bytesize=serial.EIGHTBITS,
     timeout=1
 )
+last_received=""
+def receiving(ser):
+    global last_received
+
+    buffer = ''
+    while True:
+        buffer = buffer + ser.read(ser.inWaiting())
+        if '\r' in buffer:
+            lines = buffer.split('\r')
+            last_received = lines.pop(0)
+
+            buffer = '\r'.join(lines)
 
 configuration = config.read()
 S_ROSSO = int(configuration.get("GPIO", "S_ROSSO"))
@@ -26,6 +39,7 @@ P_CHIAMATA = int(configuration.get("GPIO", "CHIAMATA"))
 PROCEDURA_OK = int(configuration.get("GPIO", "PROCEDURA_OK"))
 PRESENZA_MEZZO = int(configuration.get("GPIO", "PRESENZA_MEZZO"))
 
+GPIO.cleanup()
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(S_ROSSO, GPIO.OUT)
 GPIO.setup(S_VERDE, GPIO.OUT)
@@ -36,32 +50,30 @@ GPIO.setup(P_CHIAMATA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(PROCEDURA_OK, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(PRESENZA_MEZZO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 #GPIO.input(20)
-global errore
-errore = 0
-
-
 def getPeso():
-    global errore
     try:
         ser.flushInput()
-        x = ser.read_until(b'\r').decode()
-        x = int(x.replace("$", ""))
-        return x
+        line = []
+        while True:
+            for c in ser.read():
+                line.append(chr(c))
+                if "\r" in line:
+                    line = ''.join(line).replace("$","")
+                    line = int(line)
+                    if(line>=10000):
+                       peso_sbagliato = int(str(line)[0])*100000
+                       line = line - peso_sbagliato
+                    return line
     except:
-        if errore < 3:
-            print("ERRORE NELLA LETTURA DALLA PESA, RIPROVO.")
-            errore+=1
-            getPeso()
-        else:
-            print("TENTATIVI NON A SUCCESSO. MANDO 0 COME PESO")
-            return 0
-
+        print("ERRORE, RIPROVO TRA 2 SEC")
+        time.sleep(2)
+        getPeso()
 
 
 def programma():
+    spegni_cicalino()
     semaforo_rosso(False)
     semaforo_verde(False)
-    GPIO.output(CICALINO,True)
     while True:
         if not GPIO.input(P_MANUALE):
             time.sleep(0.1)
@@ -121,45 +133,49 @@ def programma_manuale():
         time.sleep(0.2)
 
 def programma_automatico():
+
     print("AUTOMATICO")
     stato = 0
 
     while True:
+        peso = getPeso()
         #Sale camion
         if stato == 0:
             semaforo_verde(False)
             x = 0
-            peso = getPeso()
             try:
-                if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
+                if peso > 900:
                     time.sleep(0.1)
-                    if peso > 900 or not GPIO.input(PRESENZA_MEZZO):
+                    if peso > 900:
+                        peso_iniziale=peso
                         stato =1
+
             except TypeError:
                 print(peso)
                 print(type(peso))
 
         #Controllo se camion sta 5 secondi sopra
         elif stato == 1:
-            peso_updated = getPeso()
-            r = range(peso - 120, peso + 120)
-            if peso_updated in r:
-                x += 1
-            else: stato = 0
+            peso =getPeso()
 
-            if x == 2:
-                semaforo_rosso(True)
-            if x>3 or not GPIO.input(PRESENZA_MEZZO):
+            semaforo_rosso(True)
+            r = range(peso - 120, peso + 120)
+            if peso_iniziale in r:
+                x += 1
+                print(x)
+
+            else: stato = 0
+            if x == 1:
+                cicalino()
+            if x>2:
                 time.sleep(0.1)
-                if x > 3 or not GPIO.input(PRESENZA_MEZZO):
+                if x > 2:
                     stato = 2
         #Fotografo
         elif stato == 2:
             def db():
-                DB.insert("/var/www/html/" + now+".png", peso_updated)
+                DB.insert("/var/www/html/" + now+".png", peso_iniziale)
             foto = CAMERA.read_camera()
-            semaforo_rosso(False)
-            semaforo_verde(True)
             now = str(datetime.now())
             now = now.replace(":","-")
             cv2.imwrite("/var/www/html/"+ now +".png",foto)
@@ -168,16 +184,17 @@ def programma_automatico():
 
         elif stato == 3:
             peso = getPeso()
+            semaforo_verde(True)
+            semaforo_rosso(False)
             if peso<900:
                 time.sleep(0.1)
                 if peso<900:
                     time.sleep(0.5)
                     stato = 0
 
-        time.sleep(1)
         print("Stato: " + str(stato))
         print("Peso: " + str(peso))
-
+        time.sleep(1)
 
 
 
@@ -194,5 +211,8 @@ def semaforo_verde(status):
 
 def cicalino():
     GPIO.output(CICALINO, False)
-    time.sleep(0.5)
+    time.sleep(0.1)
+    GPIO.output(CICALINO, True)
+
+def spegni_cicalino():
     GPIO.output(CICALINO, True)
