@@ -151,7 +151,7 @@ def programma_automatico():
             x = 0
             try:
                 if peso > 900:
-                    time.sleep(0.1)
+                    time.sleep(1.8)
                     peso = getPeso()
                     if peso > 900:
                         logging.info('PESO MAGGIORE DI 900. VADO ALLO STATO 1')
@@ -178,9 +178,9 @@ def programma_automatico():
             if x == 1:
                 cicalino()
 
-            if x>4:
+            if x>3:
                 time.sleep(0.1)
-                if x > 4:
+                if x > 3:
                     logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
                     stato = 2
         #Fotografo
