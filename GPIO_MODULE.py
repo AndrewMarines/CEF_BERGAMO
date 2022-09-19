@@ -8,6 +8,8 @@ import DB
 import config
 import threading
 import serial
+import logging
+logging.basicConfig(level=logging.INFO, filename='app.log',format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 ser = serial.Serial(
     port='/dev/ttyUSB0',
     baudrate=9600,
@@ -61,10 +63,12 @@ def getPeso():
                     line = ''.join(line).replace("$","")
                     line = int(line)
                     if(line>=10000):
+                       logging.warning(f'Peso sbagliato{line}. Procedo a risolvere')
                        peso_sbagliato = int(str(line)[0])*100000
                        line = line - peso_sbagliato
                     return line
     except:
+        logging.error('ERRORE NELLA RICEZIONE PESO.')
         print("ERRORE, RIPROVO TRA 2 SEC")
         time.sleep(2)
         getPeso()
@@ -141,40 +145,50 @@ def programma_automatico():
         peso = getPeso()
         #Sale camion
         if stato == 0:
+            logging.debug('STATO 0')
+            semaforo_rosso(False)
             semaforo_verde(False)
             x = 0
             try:
                 if peso > 900:
                     time.sleep(0.1)
+                    peso = getPeso()
                     if peso > 900:
+                        logging.info('PESO MAGGIORE DI 900. VADO ALLO STATO 1')
                         peso_iniziale=peso
                         stato =1
 
-            except TypeError:
-                print(peso)
-                print(type(peso))
+            except Exception as e:
+                logging.error(f' Exception occurred. {peso}', exc_info=True)
 
         #Controllo se camion sta 5 secondi sopra
         elif stato == 1:
+            logging.debug('STATO 1')
             peso =getPeso()
 
             semaforo_rosso(True)
-            r = range(peso - 120, peso + 120)
+            r = range(peso - 150, peso + 150)
             if peso_iniziale in r:
                 x += 1
                 print(x)
+            else:
+                stato = 0
+                logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
 
-            else: stato = 0
             if x == 1:
                 cicalino()
-            if x>2:
+
+            if x>4:
                 time.sleep(0.1)
-                if x > 2:
+                if x > 4:
+                    logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
                     stato = 2
         #Fotografo
         elif stato == 2:
+            logging.debug('STATO 2')
             def db():
                 DB.insert("/var/www/html/" + now+".png", peso_iniziale)
+                logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
             foto = CAMERA.read_camera()
             now = str(datetime.now())
             now = now.replace(":","-")
@@ -183,12 +197,15 @@ def programma_automatico():
             stato = 3
 
         elif stato == 3:
+            logging.debug('STATO 3')
             peso = getPeso()
             semaforo_verde(True)
             semaforo_rosso(False)
             if peso<900:
-                time.sleep(0.1)
+                time.sleep(0.5)
+                peso =getPeso()
                 if peso<900:
+                    logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
                     time.sleep(0.5)
                     stato = 0
 
@@ -203,16 +220,20 @@ def programma_automatico():
 def semaforo_rosso(status):
     status = not status
     GPIO.output(S_ROSSO, status)
+    logging.debug(f'{status} SEMAFORO ROSSO')
 
 
 def semaforo_verde(status):
     status = not status
     GPIO.output(S_VERDE, status)
+    logging.debug(f'{status} SEMAFORO VERDE')
 
 def cicalino():
     GPIO.output(CICALINO, False)
     time.sleep(0.1)
     GPIO.output(CICALINO, True)
+    logging.debug(f'CICALINO SUONATO')
 
 def spegni_cicalino():
     GPIO.output(CICALINO, True)
+    logging.debug(f'CICALINO SPENTO')
