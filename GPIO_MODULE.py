@@ -143,76 +143,82 @@ def programma_automatico():
 
     while True:
         peso = getPeso()
-        #Sale camion
-        if stato == 0:
-            logging.debug('STATO 0')
-            semaforo_rosso(False)
-            semaforo_verde(False)
-            x = 0
-            try:
+        try:
+            #Sale camion
+                logging.debug('STATO 0')
+                semaforo_rosso(False)
+                semaforo_verde(False)
+                x = 0
                 if peso > 900:
-                    time.sleep(1.8)
-                    peso = getPeso()
-                    if peso > 900:
-                        logging.info('PESO MAGGIORE DI 900. VADO ALLO STATO 1')
-                        peso_iniziale=peso
-                        stato =1
+                        time.sleep(1.8)
+                        peso = getPeso()
+                        if peso > 900:
+                            logging.info('PESO MAGGIORE DI 900. VADO ALLO STATO 1')
+                            peso_iniziale=peso
+                            controllo_camion(peso_iniziale)
 
-            except Exception as e:
-                logging.error(f' Exception occurred. {peso}', exc_info=True)
+        except Exception as e:
+            logging.error(f' Exception occurred. {peso}', exc_info=True)
 
-        #Controllo se camion sta 5 secondi sopra
-        elif stato == 1:
-            logging.debug('STATO 1')
-            peso =getPeso()
-
-            semaforo_rosso(True)
-            r = range(peso - 150, peso + 150)
-            if peso_iniziale in r:
-                x += 1
-                print(x)
-            else:
-                stato = 0
-                logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
-
-            if x == 1:
-                cicalino()
-
-            if x>3:
-                time.sleep(0.1)
-                if x > 3:
-                    logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
-                    stato = 2
-        #Fotografo
-        elif stato == 2:
-            logging.debug('STATO 2')
-            def db():
-                DB.insert("/var/www/html/" + now+".png", peso_iniziale)
-                logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
-            foto = CAMERA.read_camera()
-            now = str(datetime.now())
-            now = now.replace(":","-")
-            cv2.imwrite("/var/www/html/"+ now +".png",foto)
-            multiprocessing.Process(target=db).start()
-            stato = 3
-
-        elif stato == 3:
-            logging.debug('STATO 3')
-            peso = getPeso()
-            semaforo_verde(True)
-            semaforo_rosso(False)
-            if peso<900:
-                time.sleep(0.5)
+def controllo_camion(peso_iniziale):
+    def ciclo():
+        try:
+            for x in range(3):
+                logging.debug('STATO 1')
                 peso =getPeso()
-                if peso<900:
-                    logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
-                    time.sleep(0.5)
-                    stato = 0
+                semaforo_rosso(True)
+                r = range(peso - 150, peso + 150)
+                if not peso_iniziale in r:
+                    logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
+                    break
+                if x == 1:
+                    cicalino()
 
-        print("Stato: " + str(stato))
-        print("Peso: " + str(peso))
-        time.sleep(1)
+                time.sleep(1)
+        except Exception as e:
+            logging.error(f' Exception occurred. {peso}', exc_info=True)
 
+        if x == 2:
+            time.sleep(0.1)
+            logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
+            fotografo(peso_iniziale)
+
+    processo = multiprocessing.Process(target=ciclo)
+    processo.start()
+    processo.join(timeout=5)
+
+
+def fotografo(peso_iniziale):
+    logging.debug('STATO 2')
+    now = str(datetime.now())
+    now = now.replace(":", "-")
+
+    def salva():
+        foto = CAMERA.read_camera()
+        cv2.imwrite("/var/www/html/" + now + ".png", foto)
+        logging.debug('FOTO SALVATA')
+        multiprocessing.Process(target=db).start()
+        logging.debug('PROCESSO DB')
+
+    def db():
+        DB.insert("/var/www/html/" + now + ".png", peso_iniziale)
+        logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
+
+    processo = multiprocessing.Process(target=salva)
+    processo.start()
+    processo.join(timeout=6)
+    andare()
+
+
+def andare():
+    logging.debug('STATO 3')
+    peso = getPeso()
+    semaforo_verde(True)
+    semaforo_rosso(False)
+    while(peso > 900):
+        time.sleep(2)
+        peso = getPeso()
+    logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
 
 
 
