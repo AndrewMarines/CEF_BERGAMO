@@ -144,6 +144,7 @@ def programma_automatico():
     while True:
         peso = getPeso()
         try:
+                spegni_cicalino()
             #Sale camion
                 logging.debug('STATO 0')
                 semaforo_rosso(False)
@@ -161,31 +162,23 @@ def programma_automatico():
             logging.error(f' Exception occurred. {peso}', exc_info=True)
 
 def controllo_camion(peso_iniziale):
-    def ciclo():
-        try:
-            for x in range(3):
-                logging.debug('STATO 1')
-                peso =getPeso()
-                semaforo_rosso(True)
-                r = range(peso - 150, peso + 150)
-                if not peso_iniziale in r:
-                    logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
-                    break
-                if x == 1:
-                    cicalino()
+    try:
+        for x in range(4):
+            logging.debug('STATO 1')
+            peso =getPeso()
+            semaforo_rosso(True)
+            r = range(peso - 150, peso + 150)
+            if not peso_iniziale in r:
+                logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
+                break
+            time.sleep(1)
+    except Exception as e:
+        logging.error(f' Exception occurred. {peso}', exc_info=True)
 
-                time.sleep(1)
-        except Exception as e:
-            logging.error(f' Exception occurred. {peso}', exc_info=True)
-
-        if x == 2:
-            time.sleep(0.1)
-            logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
-            fotografo(peso_iniziale)
-
-    processo = multiprocessing.Process(target=ciclo)
-    processo.start()
-    processo.join(timeout=5)
+    if x == 3:
+        time.sleep(0.1)
+        logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
+        fotografo(peso_iniziale)
 
 
 def fotografo(peso_iniziale):
@@ -194,6 +187,7 @@ def fotografo(peso_iniziale):
     now = now.replace(":", "-")
 
     def salva():
+        cicalino()
         foto = CAMERA.read_camera()
         cv2.imwrite("/var/www/html/" + now + ".png", foto)
         logging.debug('FOTO SALVATA')
