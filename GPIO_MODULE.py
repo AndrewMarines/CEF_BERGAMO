@@ -163,22 +163,22 @@ def programma_automatico():
 
 def controllo_camion(peso_iniziale):
     try:
-        for x in range(4):
-            logging.debug('STATO 1')
-            peso =getPeso()
             semaforo_rosso(True)
+            time.sleep(3)
+            peso =getPeso()
             r = range(peso - 150, peso + 150)
             if not peso_iniziale in r:
                 logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
-                break
-            time.sleep(1)
+            else:
+                logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
+                time.sleep(1)
+                fotografo(peso_iniziale)
+
     except Exception as e:
         logging.error(f' Exception occurred. {peso}', exc_info=True)
 
-    if x == 3:
-        time.sleep(0.1)
-        logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
-        fotografo(peso_iniziale)
+
+
 
 
 def fotografo(peso_iniziale):
