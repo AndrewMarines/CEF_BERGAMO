@@ -9,7 +9,7 @@ import config
 import threading
 import serial
 import logging
-logging.basicConfig(level=logging.INFO, filename='app.log',format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(level=logging.DEBUG, filename='app.log',format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 ser = serial.Serial(
     port='/dev/ttyUSB0',
     baudrate=9600,
