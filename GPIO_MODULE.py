@@ -9,7 +9,7 @@ import config
 import threading
 import serial
 import logging
-logging.basicConfig(level=logging.DEBUG, filename='app.log',format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
+logging.basicConfig(level=logging.INFO, filename='app.log',format='%(asctime)s - %(message)s', datefmt='%d-%b-%y %H:%M:%S')
 ser = serial.Serial(
     port='/dev/ttyUSB0',
     baudrate=9600,
@@ -18,19 +18,6 @@ ser = serial.Serial(
     bytesize=serial.EIGHTBITS,
     timeout=1
 )
-last_received=""
-def receiving(ser):
-    global last_received
-
-    buffer = ''
-    while True:
-        buffer = buffer + ser.read(ser.inWaiting())
-        if '\r' in buffer:
-            lines = buffer.split('\r')
-            last_received = lines.pop(0)
-
-            buffer = '\r'.join(lines)
-
 configuration = config.read()
 S_ROSSO = int(configuration.get("GPIO", "S_ROSSO"))
 S_VERDE = int(configuration.get("GPIO", "S_VERDE"))
@@ -52,26 +39,30 @@ GPIO.setup(P_CHIAMATA, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(PROCEDURA_OK, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 GPIO.setup(PRESENZA_MEZZO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 #GPIO.input(20)
+
+
 def getPeso():
     try:
-        ser.flushInput()
         line = []
+        ser.flushInput()
         while True:
-            for c in ser.read():
-                line.append(chr(c))
-                if "\r" in line:
-                    line = ''.join(line).replace("$","")
-                    line = int(line)
-                    if(line>=10000):
-                       logging.warning(f'Peso sbagliato{line}. Procedo a risolvere')
-                       peso_sbagliato = int(str(line)[0])*100000
-                       line = line - peso_sbagliato
-                    return line
-    except:
-        logging.error('ERRORE NELLA RICEZIONE PESO.')
+            dato = ser.read().decode('utf-8')
+            if dato == "$":
+                while True:
+                    linea = ser.read().decode('utf-8')
+                    if linea == '$':
+                        value = int(''.join(i for i in line))
+                        if value > 100000:
+                            value = int(str(value)[1:])
+                        return value
+                    else:
+                        line.append(linea)
+    except Exception as e:
+        logging.error(f' Exception occurred. {line}', exc_info=True)
         print("ERRORE, RIPROVO TRA 2 SEC")
         time.sleep(2)
         getPeso()
+
 
 
 def programma():
@@ -146,7 +137,7 @@ def programma_automatico():
         try:
                 spegni_cicalino()
             #Sale camion
-                logging.debug('STATO 0')
+                logging.debug(f'STATO 0 PESO:{peso}')
                 semaforo_rosso(False)
                 semaforo_verde(False)
                 x = 0
@@ -154,9 +145,8 @@ def programma_automatico():
                         time.sleep(1.8)
                         peso = getPeso()
                         if peso > 900:
-                            logging.info('PESO MAGGIORE DI 900. VADO ALLO STATO 1')
-                            peso_iniziale=peso
-                            controllo_camion(peso_iniziale)
+                            logging.info(f'PESO: {peso}. VADO ALLO STATO 1')
+                            controllo_camion(peso)
 
         except Exception as e:
             logging.error(f' Exception occurred. {peso}', exc_info=True)
@@ -164,15 +154,10 @@ def programma_automatico():
 def controllo_camion(peso_iniziale):
     try:
             semaforo_rosso(True)
-            time.sleep(3)
-            peso =getPeso()
-            r = range(peso - 150, peso + 150)
-            if not peso_iniziale in r:
-                logging.info('PESO NON PIù NEL RANGE. RITORNO A STATO 0')
-            else:
-                logging.info('PESO STABILE. PROCEDO ALLO STATO 2')
-                time.sleep(1)
-                fotografo(peso_iniziale)
+            time.sleep(6)
+            peso = getPeso()
+            if peso > 900:
+                fotografo(peso)
 
     except Exception as e:
         logging.error(f' Exception occurred. {peso}', exc_info=True)
@@ -182,31 +167,52 @@ def controllo_camion(peso_iniziale):
 
 
 def fotografo(peso_iniziale):
-    logging.debug('STATO 2')
+    logging.debug(f'STATO 2')
     now = str(datetime.now())
     now = now.replace(":", "-")
 
     def salva():
-        cicalino()
-        foto = CAMERA.read_camera()
-        cv2.imwrite("/var/www/html/" + now + ".png", foto)
-        logging.debug('FOTO SALVATA')
-        multiprocessing.Process(target=db).start()
-        logging.debug('PROCESSO DB')
+        try:
+            cicalino()
+            foto = CAMERA.read_camera()
+            cv2.imwrite("/var/www/html/" + now + ".png", foto)
+            logging.debug('FOTO SALVATA')
+            database = multiprocessing.Process(target=db)
+            database.start()
+            database.join(timeout=6)
+            if database.exitcode is None:
+                cicalino()
+                time.sleep(0.1)
+                cicalino()
+                time.sleep(0.1)
+                cicalino()
+            logging.debug('PROCESSO DB')
+        except Exception as e:
+            logging.error(f' Errore nella ricezione della foto', exc_info=True)
 
     def db():
-        DB.insert("/var/www/html/" + now + ".png", peso_iniziale)
-        logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
+        try:
+            DB.insert("/var/www/html/" + now + ".png", peso_iniziale)
+            logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
+
+        except Exception as e:
+            logging.error(f' Errore nell inserimento del db', exc_info=True)
 
     processo = multiprocessing.Process(target=salva)
     processo.start()
     processo.join(timeout=6)
+    if processo.exitcode is None:
+        cicalino()
+        time.sleep(0.1)
+        cicalino()
+        time.sleep(0.1)
+        cicalino()
     andare()
 
 
 def andare():
-    logging.debug('STATO 3')
     peso = getPeso()
+    logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
     semaforo_verde(True)
     semaforo_rosso(False)
     while(peso > 900):
