@@ -176,7 +176,6 @@ def processo_automatico():
             now = str(datetime.now())
             now = now.replace(":", "-")
 
-            cicalino()
             foto = CAMERA.read_camera()
             cv2.imwrite("/var/www/html/" + now + ".png", foto)
             logging.debug('FOTO SALVATA')
@@ -192,6 +191,7 @@ def processo_automatico():
 
 
 def andare():
+    cicalino()
     peso = getPeso()
     logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
     semaforo_verde(True)
