@@ -158,8 +158,14 @@ def programma_automatico():
                     if processo.exitcode is None:
                         errore_cicalino()
                         processo.terminate()
+                        processo.join(1)
+                        if processo.exitcode is None:
+                            processo.kill()
+                        logging.info(f'IL PROCESSO É STATO TERMINATO PER TIMEOUT')
+                    elif processo.exitcode != 0:
+                        logging.info(f'ERRORE SCONOSCIUTO DEL PROCESSO {processo.exitcode}')
 
-                    andare()
+                andare()
 
         except Exception as e:
             logging.error(f' Exception occurred. {peso}', exc_info=True)
