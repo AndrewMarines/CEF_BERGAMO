@@ -10,8 +10,8 @@ import threading
 import serial
 import logging
 
-logging.basicConfig(level=logging.INFO, filename='app.log', format='%(asctime)s - %(message)s',
-                    datefmt='%d-%b-%y %H:%M:%S')
+#logging.basicConfig(level=logging.INFO, filename='app.log', format='%(asctime)s - %(message)s',
+ #                   datefmt='%d-%b-%y %H:%M:%S')
 ser = serial.Serial(
     port='/dev/ttyUSB0',
     baudrate=9600,
@@ -56,13 +56,13 @@ def getPeso():
                     linea = ser.read().decode('utf-8')
                     if linea == '$':
                         value = int(''.join(i for i in line))
-                        if value > 100000:
+                        if value >= 100000:
                             value = int(str(value)[1:])
                         return value
                     else:
                         line.append(linea)
     except Exception as e:
-        logging.error(f' Exception occurred. {line}', exc_info=True)
+        #logging.error(f' Exception occurred. {line}', exc_info=True)
         print("ERRORE, RIPROVO TRA 2 SEC")
         time.sleep(2)
         getPeso()
@@ -142,7 +142,7 @@ def programma_automatico():
         try:
 
             # Sale camion
-            logging.debug(f'STATO 0 PESO:{peso}')
+            #logging.debug(f'STATO 0 PESO:{peso}')
             semaforo_rosso(False)
             semaforo_verde(False)
 
@@ -150,10 +150,10 @@ def programma_automatico():
                 time.sleep(2)
                 peso = getPeso()
                 if peso > 900:
-                    logging.info(f'PESO: {peso}. VEDO SE CAMION RIMANE TEMPO CORRETTO.')
-
+                    #logging.info(f'PESO: {peso}. VEDO SE CAMION RIMANE TEMPO CORRETTO.')
                     processo = multiprocessing.Process(target=processo_automatico)
                     processo.start()
+<<<<<<< Updated upstream
                     processo.join(timeout=10)
                     if processo.exitcode is None:
                         errore_cicalino()
@@ -163,11 +163,19 @@ def programma_automatico():
                         errore_cicalino()
                         processo.kill()
                         logging.info(f'ERRORE SCONOSCIUTO DEL PROCESSO {processo.exitcode}')
+=======
+                    time.sleep(7)
+                    if processo.is_alive():
+                        processo.terminate()
+                        errore_cicalino()
+                        #logging.info(f'IL PROCESSO É STATO TERMINATO PER TIMEOUT O ALTRO ERRORE SCONOSCIUTO')
+>>>>>>> Stashed changes
 
                 andare()
 
         except Exception as e:
-            logging.error(f' Exception occurred. {peso}', exc_info=True)
+            print("ERRORE")
+            #logging.error(f' Exception occurred. {peso}', exc_info=True)
 
 
 def processo_automatico():
@@ -177,64 +185,64 @@ def processo_automatico():
         peso = getPeso()
 
         if peso > 900:
-            logging.debug(f'PESO {peso} OK')
+            #logging.debug(f'PESO {peso} OK')
             now = str(datetime.now())
             now = now.replace(":", "-")
 
             foto = CAMERA.read_camera()
             cv2.imwrite("/var/www/html/" + now + ".png", foto)
-            logging.debug('FOTO SALVATA')
+            #logging.debug('FOTO SALVATA')
 
             DB.insert("/var/www/html/" + now + ".png", peso)
-            logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
+            #logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
 
 
 
     except Exception as e:
-        logging.error(f' Exception occurred. {peso}', exc_info=True)
+        #logging.error(f' Exception occurred. {peso}', exc_info=True)
         errore_cicalino()
 
 
 def andare():
     cicalino()
     peso = getPeso()
-    logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
+    #logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
     semaforo_verde(True)
     semaforo_rosso(False)
     while peso > 900:
         time.sleep(2)
         peso = getPeso()
-    logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
+    #logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
 
 
 def semaforo_rosso(status):
     status = not status
     if GPIO.input(S_ROSSO) != status:
         GPIO.output(S_ROSSO, status)
-        logging.debug(f'{status} SEMAFORO ROSSO')
+        #logging.debug(f'{status} SEMAFORO ROSSO')
 
 
 def semaforo_verde(status):
     status = not status
     if GPIO.input(S_VERDE) != status:
         GPIO.output(S_VERDE, status)
-        logging.debug(f'{status} SEMAFORO VERDE')
+        #logging.debug(f'{status} SEMAFORO VERDE')
 
 
 def cicalino():
     GPIO.output(CICALINO, False)
     time.sleep(0.1)
     GPIO.output(CICALINO, True)
-    logging.debug(f'CICALINO SUONATO')
+    #logging.debug(f'CICALINO SUONATO')
 
 
 def spegni_cicalino():
     GPIO.output(CICALINO, True)
-    logging.debug(f'CICALINO SPENTO')
+    #logging.debug(f'CICALINO SPENTO')
 
 
 def errore_cicalino():
-    logging.info(f'ERRORE NEL PROCESSO DI ACQUISIZIONE. ATTIVO IL CICALINO')
+    #logging.info(f'ERRORE NEL PROCESSO DI ACQUISIZIONE. ATTIVO IL CICALINO')
     cicalino()
     time.sleep(0.1)
     cicalino()
