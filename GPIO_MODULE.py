@@ -153,25 +153,14 @@ def programma_automatico():
                     #logging.info(f'PESO: {peso}. VEDO SE CAMION RIMANE TEMPO CORRETTO.')
                     processo = multiprocessing.Process(target=processo_automatico)
                     processo.start()
-<<<<<<< Updated upstream
-                    processo.join(timeout=10)
-                    if processo.exitcode is None:
-                        errore_cicalino()
-                        processo.kill()
-                        logging.info(f'IL PROCESSO É STATO TERMINATO PER TIMEOUT')
-                    elif processo.exitcode != 0:
-                        errore_cicalino()
-                        processo.kill()
-                        logging.info(f'ERRORE SCONOSCIUTO DEL PROCESSO {processo.exitcode}')
-=======
-                    time.sleep(7)
+
+                    time.sleep(9)
                     if processo.is_alive():
                         processo.terminate()
                         errore_cicalino()
+                        semaforo_verde(True)
+                        time.sleep(2)
                         #logging.info(f'IL PROCESSO É STATO TERMINATO PER TIMEOUT O ALTRO ERRORE SCONOSCIUTO')
->>>>>>> Stashed changes
-
-                andare()
 
         except Exception as e:
             print("ERRORE")
@@ -188,31 +177,20 @@ def processo_automatico():
             #logging.debug(f'PESO {peso} OK')
             now = str(datetime.now())
             now = now.replace(":", "-")
-
             foto = CAMERA.read_camera()
             cv2.imwrite("/var/www/html/" + now + ".png", foto)
-            #logging.debug('FOTO SALVATA')
-
             DB.insert("/var/www/html/" + now + ".png", peso)
-            #logging.info('PROCESSO DI FOTO+RICONOSCIMENTO ESEGUITO')
-
-
+            cicalino()
+            # logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
+            semaforo_verde(True)
+            semaforo_rosso(False)
+            time.sleep(2)
+            # logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
 
     except Exception as e:
         #logging.error(f' Exception occurred. {peso}', exc_info=True)
         errore_cicalino()
 
-
-def andare():
-    cicalino()
-    peso = getPeso()
-    #logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
-    semaforo_verde(True)
-    semaforo_rosso(False)
-    while peso > 900:
-        time.sleep(2)
-        peso = getPeso()
-    #logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
 
 
 def semaforo_rosso(status):
