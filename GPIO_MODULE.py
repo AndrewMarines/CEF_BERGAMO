@@ -8,10 +8,9 @@ import DB
 import config
 import threading
 import serial
-import logging
 
-#logging.basicConfig(level=logging.INFO, filename='app.log', format='%(asctime)s - %(message)s',
- #                   datefmt='%d-%b-%y %H:%M:%S')
+
+
 ser = serial.Serial(
     port='/dev/ttyUSB0',
     baudrate=9600,
@@ -68,128 +67,7 @@ def getPeso():
         getPeso()
 
 
-def programma():
-    spegni_cicalino()
-    semaforo_rosso(False)
-    semaforo_verde(False)
-    while True:
-        if not GPIO.input(P_MANUALE):
-            time.sleep(0.1)
-            if not GPIO.input(P_MANUALE):
-                programma_manuale()
 
-        elif not GPIO.input(P_AUTOMATICO):
-            time.sleep(0.1)
-            if not GPIO.input(P_AUTOMATICO):
-                programma_automatico()
-
-
-def programma_manuale():
-    print("MANUALE")
-    x = 0
-    stato = 0
-    while True:
-        if stato == 0:
-            semaforo_rosso(False)
-            semaforo_verde(False)
-            if not GPIO.input(PRESENZA_MEZZO):
-                if x == 10:
-                    confermato = False
-                    stato = 1
-                else:
-                    x += 1
-            else:
-                x = 0
-        # Aspetto chiamata
-        if stato == 1:
-            if GPIO.input(PRESENZA_MEZZO):
-                stato = 0
-            semaforo_rosso(True)
-            if not GPIO.input(P_CHIAMATA):
-                time.sleep(0.1)
-                if not GPIO.input(P_CHIAMATA):
-                    stato = 2
-        # Attivo cicalino
-        elif stato == 2:
-            cicalino()
-            stato = 3
-        # Aspetto procedura ok
-        elif stato == 3:
-            if not GPIO.input(PROCEDURA_OK):
-                time.sleep(0.1)
-                if not GPIO.input(PROCEDURA_OK):
-                    confermato = True
-                    semaforo_verde(True)
-                    semaforo_rosso(False)
-                    time.sleep(2)
-
-            if GPIO.input(PRESENZA_MEZZO) and confermato == True:
-                stato = 0
-        if GPIO.input(P_MANUALE):
-            semaforo_verde(False)
-            semaforo_rosso(False)
-            break
-        print(stato)
-        time.sleep(0.2)
-
-
-def programma_automatico():
-    spegni_cicalino()
-    print("AUTOMATICO")
-    while True:
-        time.sleep(1)
-        peso = getPeso()
-        try:
-
-            # Sale camion
-            #logging.debug(f'STATO 0 PESO:{peso}')
-            semaforo_rosso(False)
-            semaforo_verde(False)
-
-            if peso > 900:
-                time.sleep(2)
-                peso = getPeso()
-                if peso > 900:
-                    #logging.info(f'PESO: {peso}. VEDO SE CAMION RIMANE TEMPO CORRETTO.')
-                    processo = multiprocessing.Process(target=processo_automatico)
-                    processo.start()
-
-                    time.sleep(9)
-                    if processo.is_alive():
-                        processo.terminate()
-                        errore_cicalino()
-                        semaforo_verde(True)
-                        time.sleep(2)
-                        #logging.info(f'IL PROCESSO É STATO TERMINATO PER TIMEOUT O ALTRO ERRORE SCONOSCIUTO')
-
-        except Exception as e:
-            print("ERRORE")
-            #logging.error(f' Exception occurred. {peso}', exc_info=True)
-
-
-def processo_automatico():
-    try:
-        semaforo_rosso(True)
-        time.sleep(4)
-        peso = getPeso()
-
-        if peso > 900:
-            #logging.debug(f'PESO {peso} OK')
-            now = str(datetime.now())
-            now = now.replace(":", "-")
-            foto = CAMERA.read_camera()
-            cv2.imwrite("/var/www/html/" + now + ".png", foto)
-            DB.insert("/var/www/html/" + now + ".png", peso)
-            cicalino()
-            # logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
-            semaforo_verde(True)
-            semaforo_rosso(False)
-            time.sleep(2)
-            # logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
-
-    except Exception as e:
-        #logging.error(f' Exception occurred. {peso}', exc_info=True)
-        errore_cicalino()
 
 
 

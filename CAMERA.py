@@ -12,32 +12,28 @@ pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tessera
 
 
 def read_camera():
-    try:
-        configuration = config.read()
-        IP = configuration.get("CAMERA", "IP")
-        PORT = configuration.get("CAMERA", "PORT")
-        USER = configuration.get("CAMERA", "USER")
-        PASSWORD = configuration.get("CAMERA", "PASSWORD")
+    configuration = config.read()
+    IP = configuration.get("CAMERA", "IP")
+    PORT = configuration.get("CAMERA", "PORT")
+    USER = configuration.get("CAMERA", "USER")
+    PASSWORD = configuration.get("CAMERA", "PASSWORD")
 
-        HTTP_URL = f'http://admin:hik123456@192.168.10.65/ISAPI/Streaming/channels/301/picture?videoResolutionWidth=1920&videoResolutionHeight=1080'
-        cam = Client('http://192.168.10.65', 'admin', 'hik123456')
-        vid = cam.Streaming.channels[301].picture(method='get', type='opaque_data', params={'videoResolutionWidth':'1920', 'videoResolutionHeight':'1080'})
-        bytes = b''
-        for chunk in vid.iter_content(chunk_size=1024):
+    HTTP_URL = f'http://admin:hik123456@192.168.10.65/ISAPI/Streaming/channels/301/picture?videoResolutionWidth=1920&videoResolutionHeight=1080'
+    cam = Client('http://192.168.10.65', 'admin', 'hik123456')
+    vid = cam.Streaming.channels[301].picture(method='get', type='opaque_data', params={'videoResolutionWidth':'1920', 'videoResolutionHeight':'1080'})
+    bytes = b''
+    for chunk in vid.iter_content(chunk_size=1024):
 
-                bytes += chunk
-                a = bytes.find(b'\xff\xd8')
-                b = bytes.find(b'\xff\xd9')
-                if a != -1 and b != -1:
-                    jpg = bytes[a:b + 2]
-                    bytes = bytes[b + 2:]
-                    i = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+            bytes += chunk
+            a = bytes.find(b'\xff\xd8')
+            b = bytes.find(b'\xff\xd9')
+            if a != -1 and b != -1:
+                jpg = bytes[a:b + 2]
+                bytes = bytes[b + 2:]
+                i = cv2.imdecode(np.fromstring(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
 
-                    return i
-    except:
-        print("ERRORE NELLA LETTURA CAMERA")
-        time.sleep(2)
-        read_camera()
+                return i
+
 
 def getTarga(iniziale):
     # Read the image file
