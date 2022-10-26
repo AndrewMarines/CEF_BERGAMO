@@ -48,10 +48,10 @@ def getPeso():
     try:
         line = []
         ser.flushInput()
-        while True:
+        for k in range(10):
             dato = ser.read().decode('utf-8')
             if dato == "$":
-                while True:
+                for j in range(10):
                     linea = ser.read().decode('utf-8')
                     if linea == '$':
                         value = int(''.join(i for i in line))
@@ -60,11 +60,10 @@ def getPeso():
                         return value
                     else:
                         line.append(linea)
+        return "prova"
     except Exception as e:
-        #logging.error(f' Exception occurred. {line}', exc_info=True)
-        print("ERRORE, RIPROVO TRA 2 SEC")
-        time.sleep(2)
-        getPeso()
+        time.sleep(3)
+        return "prova"
 
 
 

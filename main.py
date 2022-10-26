@@ -72,12 +72,11 @@ def programma_automatico():
     GPIO_MODULE.spegni_cicalino()
     print("AUTOMATICO")
     while True:
+        GPIO_MODULE.semaforo_rosso(False)
+        GPIO_MODULE.semaforo_verde(False)
         time.sleep(1)
         peso = GPIO_MODULE.getPeso()
         try:
-            GPIO_MODULE.semaforo_rosso(False)
-            GPIO_MODULE.semaforo_verde(False)
-
             if peso > 900:
                 time.sleep(2)
                 peso = GPIO_MODULE.getPeso()
@@ -125,4 +124,5 @@ def program():
 
 
 if __name__ == '__main__':
-    program()
+    while True:
+        program()
