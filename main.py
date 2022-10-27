@@ -76,35 +76,37 @@ def programma_automatico():
         GPIO_MODULE.semaforo_verde(False)
         time.sleep(1)
         peso = GPIO_MODULE.getPeso()
-        try:
+        if type(peso) is int:
             if peso > 900:
-                time.sleep(2)
-                peso = GPIO_MODULE.getPeso()
-                if peso > 900:
-                    logging.info(f'PESO: {peso}. VEDO SE CAMION RIMANE TEMPO CORRETTO.')
-                    GPIO_MODULE.semaforo_rosso(True)
-                    time.sleep(4)
+                try:
+                    time.sleep(2)
                     peso = GPIO_MODULE.getPeso()
-
                     if peso > 900:
-                        now = str(datetime.now())
-                        now = now.replace(":", "-")
-                        foto = CAMERA.read_camera()
-                        logging.info(f'CAMERA LETTA')
-                        cv2.imwrite("/var/www/html/" + now + ".png", foto)
-                        logging.info(f'CV2')
-                        DB.insert("/var/www/html/" + now + ".png", peso)
-                        logging.info(f'DB')
-                        GPIO_MODULE.cicalino()
-                        logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
-                        GPIO_MODULE.semaforo_verde(True)
-                        GPIO_MODULE.semaforo_rosso(False)
-                        time.sleep(2)
-                        logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
+                        logging.info(f'PESO: {peso}. VEDO SE CAMION RIMANE TEMPO CORRETTO.')
+                        GPIO_MODULE.semaforo_rosso(True)
+                        time.sleep(4)
+                        peso = GPIO_MODULE.getPeso()
+                        if peso > 900:
+                            now = str(datetime.now())
+                            now = now.replace(":", "-")
+                            foto = CAMERA.read_camera()
+                            logging.info(f'CAMERA LETTA')
+                            cv2.imwrite("/var/www/html/" + now + ".png", foto)
+                            logging.info(f'CV2')
+                            DB.insert("/var/www/html/" + now + ".png", peso)
+                            logging.info(f'DB')
+                            GPIO_MODULE.cicalino()
+                            logging.info(f'ASPETTO CHE SE NE VADA PESO:{peso}')
+                            GPIO_MODULE.semaforo_verde(True)
+                            GPIO_MODULE.semaforo_rosso(False)
+                            time.sleep(2)
+                            logging.info('PESO MINORE DI 900. TORNO ALLO STATO INIZIALE')
 
-        except Exception as e:
-            GPIO_MODULE.errore_cicalino()
-            logging.error(f' Exception occurred. {peso}', exc_info=True)
+                except Exception as e:
+                    GPIO_MODULE.errore_cicalino()
+                    logging.error(f' Exception occurred. {peso}', exc_info=True)
+        else:
+            logging.info('RESETTO SERIALE')
 
 def program():
     print("START")

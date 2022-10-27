@@ -46,6 +46,8 @@ GPIO.setup(PRESENZA_MEZZO, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 def getPeso():
     try:
+        if not ser.is_open:
+            ser.open()
         line = []
         ser.flushInput()
         for k in range(10):
@@ -62,7 +64,10 @@ def getPeso():
                         line.append(linea)
         return "prova"
     except Exception as e:
-        time.sleep(3)
+        ser.flushInput()
+        ser.close()
+        time.sleep(4)
+        ser.open()
         return "prova"
 
 
