@@ -17,6 +17,9 @@ def read_camera():
     PORT = configuration.get("CAMERA", "PORT")
     USER = configuration.get("CAMERA", "USER")
     PASSWORD = configuration.get("CAMERA", "PASSWORD")
+    """
+    https://ipvm.com/discussions/script-to-reboot-hikvision-cameras
+    """
 
     HTTP_URL = f'http://admin:hik123456@192.168.10.65/ISAPI/Streaming/channels/301/picture?videoResolutionWidth=1920&videoResolutionHeight=1080'
     cam = Client('http://192.168.10.65', 'admin', 'hik123456')
